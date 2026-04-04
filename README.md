@@ -1,7 +1,3 @@
-Here is a clean and concise README you can use for your GitHub repository:
-
----
-
 # Assignment 1 – Design Report
 
 This repository contains the Design Report for Assignment 1 of the *Advanced Data Architectures* course.
