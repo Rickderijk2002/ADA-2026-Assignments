@@ -36,21 +36,3 @@ The Design Report consists of the following sections:
 
 5. **Technology Statement**
    Disclosure of any tools, including AI tools, used during the assignment.
-
-## Requirements
-
-* Apply Domain-Driven Design to structure the system
-* Identify and justify services, agents, or data products
-* Use at least three design patterns or architectural tactics
-* Provide clear diagrams and explanations
-* Keep the report within the page limit
-
-## Notes
-
-* The design should be logically consistent and well-justified
-* Diagrams can use informal notation (no UML required)
-* Generative AI tools may be used, but all outputs must be critically evaluated and documented
-
----
-
-If you want, I can also make a shorter version or tailor it specifically to your Pulse case.
