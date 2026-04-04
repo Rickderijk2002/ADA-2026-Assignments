@@ -72,9 +72,9 @@ Data Integration, KPI & Analytics, and Reporting & Delivery could all exist in a
 
 # Identification of Business/Data Domains and Services/Agents/Data Products
 
-## **Operational Intelligence** 
+## **Operational Intelligence**
 
-## **Data Integration** 
+## **Data Integration**
 
 **Bounded context description**: The data integration domain is responsible for ingesting, standardizing, and storing operational data from external systems such as financial platforms and CRM tools. It owns the full data ingestion pipeline, including API connectivity, data retrieval, validation, transformation into a unified schema, and persistence of both raw and normalized datasets. The domain ensures that heterogeneous data from multiple sources is made consistent and usable for downstream domains. 
 
@@ -121,13 +121,13 @@ The data integration domain does not compute business metrics, detect patterns, 
 **Design principles summary:\
 **The Data Integration domain is designed around strong separation of concerns and high cohesion, where each service performs a clearly defined step in the ingestion pipeline. Loose coupling between services enables independent evolution of connectors, transformation logic, and storage mechanisms, which is essential when integrating multiple heterogeneous external systems. The domain is intentionally stateless in its processing steps, allowing scalable and repeatable batch execution. By strictly avoiding business logic and analytical reasoning, the domain maintains a clear boundary with downstream domains such as KPI & Analytics and Operational Intelligence, ensuring a modular and maintainable architecture.The Data Integration flow is intentionally shown at an abstract level. The normalization stage includes internal validation, schema mapping, and transformation steps before the resulting data is persisted in the unified data store. See @fig-data-integration
 
-## **KPI & Analytics**  
+## **KPI & Analytics**
 
-## **Reporting & Delivery**  
+## **Reporting & Delivery**
 
-## **Tenant Management** 
+## **Tenant Management**
 
-## **Notification** 
+## **Notification**
 
 # Architectural Design
 
