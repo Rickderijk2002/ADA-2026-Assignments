@@ -151,6 +151,6 @@ During the preparation of this work, we used \[NAME TOOL / SERVICE / VERSION\] i
 
 ![Context Diagram](images/Context_diagram.png){#fig-context-diagram}
 
-![Domain Diagram](images/Figure 2 Domain Diagram.png){#fig-domain-diagram}
+![Domain Diagram](images/Figure%202%20Domain%20Diagram.png){#fig-domain-diagram}
 
-![Data Integration Service](images/Context Diagram Data integration service.png){#fig-data-integration}
+![Data Integration Service](images/Context%20Diagram%20Data%20integration%20service.png){#fig-data-integration}
