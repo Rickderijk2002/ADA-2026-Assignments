@@ -74,6 +74,71 @@ Data Integration, KPI & Analytics, and Reporting & Delivery could all exist in a
 
 ## **Operational Intelligence**
 
+**Operational Intelligence** \
+The Operational Intelligence domain is the core differentiating capability of Pulse. It owns the full agentic reasoning pipeline: retrieving pre-computed KPI metrics and historical trend data from the KPI & Analytics data product's analytical store as a downstream consumer, coordinating a set of specialised reasoning agents, and producing structured insight payloads containing anomaly detections, trend analyses, and actionable recommendations. The domain is triggered on a configured schedule, ensuring autonomous and predictable operation aligned with the platform's weekly reporting cadence. It explicitly does not compute KPIs, ingest or transform data, or compose and deliver reports, those responsibilities belong to the KPI & Analytics, Data Integration, and Reporting & Delivery domains respectively. By consuming only clean, pre-computed KPI summaries and trend data as input, the domain can focus entirely on reasoning logic without any data preparation concerns.
+
+**Features**
+
+-   Retrieve the latest KPI metrics and historical trend data from the KPI & Analytics data product on a scheduled basis and initiate the agent reasoning workflow
+
+-   Analyse financial KPIs to detect anomalies such as abnormal burn rate increases, cash flow deterioration, or revenue decline against historical baselines
+
+-   Analyse sales and CRM KPIs to identify pipeline stagnation, declining conversion rates, and early customer churn signals
+
+-   Correlate signals across financial and sales domains to surface compound operational risks that neither domain-specific agent could detect in isolation
+
+-   Generate natural language insights with prioritised, actionable recommendations for each detected signal
+
+-   Produce a structured insight payload (tagged with domain, severity, narrative, and recommendations) for handoff to the Reporting & Delivery domain
+
+**Agents**
+
+Orchestrator Agent 
+
+The Orchestrator Agent manages the full reasoning workflow. It is triggered on a configured schedule, queries the KPI & Analytics data product's analytical store to retrieve the latest KPI metrics and trend data, and dispatches the Financial Intelligence Agent and the Sales & CRM Intelligence Agent in parallel via the A2A protocol. Once their outputs are available, it sequences the Cross-Domain Reasoning Agent and finally the Insight Synthesis Agent. Design principles: 
+
+-   coarse granularity, as it governs the complete workflow lifecycle; 
+
+-   autonomy, as it operates independently on a schedule without requiring external triggering; 
+
+-   observability, as it maintains a reasoning trace log across the full run to support monitoring and debugging.
+
+Financial Intelligence Agent 
+
+The Financial Intelligence Agent receives financial KPI metrics and historical trend data and applies LLM-driven reasoning to detect anomalies, evaluate trends, and generate financial-domain insights with accompanying recommendations. Design principles: 
+
+-   high cohesion, as it is scoped exclusively to financial signal analysis; 
+
+-   autonomy, as it operates with its own LLM context and reasoning prompt, independent of other agents.
+
+Sales & CRM Intelligence Agent 
+
+The Sales & CRM Intelligence Agent receives sales and CRM KPI metrics and reasons over pipeline health, conversion trends, deal velocity, and churn indicators to produce sales-domain insights. Design principles: 
+
+-   high cohesion, scoped exclusively to sales and CRM signal analysis; 
+
+-   autonomy, operating independently with its own LLM context in parallel with the Financial Intelligence Agent.
+
+Cross-Domain Reasoning Agent 
+
+The Cross-Domain Reasoning Agent receives the structured outputs of the Financial and Sales & CRM agents and reasons across them to identify compound operational risks, patterns that emerge only when signals from both domains are considered together, such as simultaneous revenue decline and accelerating churn pointing to a systemic business threat. Design principles: 
+
+-   loose coupling, as it depends only on the structured output messages of the preceding agents and not on raw data or domain internals; 
+
+-   fine granularity, as its sole responsibility is cross-signal correlation.
+
+Insight Synthesis Agent 
+
+The Insight Synthesis Agent collects all agent outputs and assembles them into a single normalised insight payload, where each insight is structured with a domain tag, severity level, natural language narrative, and prioritised recommendations. This payload is the domain's output contract with the Reporting & Delivery domain. Design principles: 
+
+-   statelessness, as each synthesis run is fully self-contained and produces a reproducible output regardless of prior runs; 
+
+-   high cohesion, focused solely on structuring and packaging the reasoning outputs.
+
+**Design principles summary**
+
+The Operational Intelligence domain is designed as a multi-agent system where each agent encapsulates a single, well-defined reasoning responsibility, resulting in high cohesion within agents and loose coupling between them. Agent-to-agent communication via the A2A protocol ensures that agents remain interoperable and independently evolvable without direct dependencies on each other's internals. The Orchestrator Agent applies the coarse granularity principle to govern the full workflow, while domain-specific and cross-domain agents apply fine granularity to keep reasoning concerns clearly separated. Statelessness in the Insight Synthesis Agent guarantees that downstream domains receive consistent and reproducible outputs. Taken together, these principles make the reasoning pipeline modular, observable, and resilient to changes in individual agent logic or LLM behaviour. See the figure for this domain: @fig-operational-domain
+
 ## **Data Integration**
 
 **Bounded context description**: The data integration domain is responsible for ingesting, standardizing, and storing operational data from external systems such as financial platforms and CRM tools. It owns the full data ingestion pipeline, including API connectivity, data retrieval, validation, transformation into a unified schema, and persistence of both raw and normalized datasets. The domain ensures that heterogeneous data from multiple sources is made consistent and usable for downstream domains. 
@@ -125,6 +190,46 @@ The data integration domain does not compute business metrics, detect patterns, 
 
 ## **Reporting & Delivery**
 
+**Bounded context description**: The Reporting & Delivery domain is responsible for composing, formatting, and distributing reports based on the outputs from the Operational Intelligence domain. It owns report templates, composition logic, stakeholder-specific report structures, delivery schedules, and recipient configurations. The domain takes analyzed insights as input and transforms them into readable and well-structured reports, such as PDF documents and summarized email notifications, ensuring that stakeholders receive clear and actionable information in a consistent format.
+
+The Reporting & Delivery domain does not compute KPIs, perform data ingestion or transformation, or reason across signals. It does not generate or interpret business insights, as this is the responsibility of the KPI & Analytics and Operational Intelligence domains. Instead, it focuses solely on presentation, assemble, scheduling, and delivery of already generated insights, maintaining a clear boundary between intelligence generation and information communication.
+
+### **Features:**
+
+-   Assemble report sections into a tenant-specific report based on predefined templates
+
+-   Structure and format insights into readable sections, tables, and summaries
+
+-   Generate report outputs in standardized formats (e.g. PDF and email summaries)
+
+-   Schedule report generation and delivery based on configured intervals (e.g. weekly)
+
+-   Deliver reports to configured stakeholders (e.g. SME owner and department heads)
+
+-   Manage report distribution settings, including recipients and delivery channels
+
+**Services / Agents / Data Products**
+
+-   **Composition Service: Assembles report sections by combining insights from the Operational Intelligence domain into a structured, tenant-specific report.**
+
+    -   **Design principles: High cohesion and separation of concerns, as it focus solely on assembling a report content without handling formatting or delivery**
+
+-   **Template Service: Applies predefined report templates to structure insights into consistent layouts and sections for each tenant.**
+
+    -   **Design principles: Abstraction and reusability, as templates standardize report structure across tenants while allowing configuration.**
+
+-   **Scheduling Service: Triggers report generation and delivery based on configured intervals (e.g. weekly schedules).**
+
+    -   **Design principles: Autonomy and statelessness, enabling independent and repeatable scheduling without dependency on other services.**
+
+-   **Delivery Service: Distributes generated reports to stakeholders via configured channels (e.g. email with PDF attachments and summary messages).**
+
+    -   **Design principles: Loose coupling and scalability, as delivery mechanisms are decoupled from report generation and can evolve independently**
+
+\
+**Design principles summary\
+**The Reporting & Delivery domain is designed with strong separation of concerns, where composition, templating, scheduling, and delivery are handled by distinct services. High cohesion ensures that each service focuses on a single responsibility, while loose coupling allows independent evolution of report generation and delivery mechanisms. The domain operates in a stateless and configurable manner, supporting scalable and repeatable report generation. By avoiding analytical logic and relying on upstream domains for insights, it maintains a clear boundary between intelligence generation and information presentation. And i refer to the diagram which has been made for this domain @fig-diagram-report
+
 ## **Tenant Management**
 
 ## **Notification**
@@ -145,7 +250,7 @@ Example format:
 
 During the preparation of this work, we used \[NAME TOOL / SERVICE / VERSION\] in order to \[REASON\]. The following parts of the assignment were affected/generated by AI tool usage: \[SECTIONS\]. After using this tool/service, \[NAME STUDENT(S)\] evaluated the validity of the tool’s outputs and edited the content as needed. As a consequence, \[NAME STUDENT(S)\] take full responsibility for the content of this work.
 
-# 6. References
+# References
 
 # Appendix
 
@@ -153,4 +258,8 @@ During the preparation of this work, we used \[NAME TOOL / SERVICE / VERSION\] i
 
 ![Domain Diagram](images/Figure%202%20Domain%20Diagram.png){#fig-domain-diagram}
 
-![Data Integration Service](images/Context%20Diagram%20Data%20integration%20service.png){#fig-data-integration}
+![Operational Intelligence Domain](images/Operational Intelligence Domain.png){#fig-operational-domain}
+
+![Data Integration Domain](images/Context Diagram Data integration service.png){#fig-data-integration}
+
+![Domain-Report-Diagram](images/Domain-Report.png){#fig-diagram-report}
