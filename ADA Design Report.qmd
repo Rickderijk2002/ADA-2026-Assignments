@@ -74,7 +74,7 @@ Data Integration, KPI & Analytics, and Reporting & Delivery could all exist in a
 
 ## **Operational Intelligence**
 
-**Operational Intelligence** \
+**Operational Intelligence**\
 The Operational Intelligence domain is the core differentiating capability of Pulse. It owns the full agentic reasoning pipeline: retrieving pre-computed KPI metrics and historical trend data from the KPI & Analytics data product's analytical store as a downstream consumer, coordinating a set of specialised reasoning agents, and producing structured insight payloads containing anomaly detections, trend analyses, and actionable recommendations. The domain is triggered on a configured schedule, ensuring autonomous and predictable operation aligned with the platform's weekly reporting cadence. It explicitly does not compute KPIs, ingest or transform data, or compose and deliver reports, those responsibilities belong to the KPI & Analytics, Data Integration, and Reporting & Delivery domains respectively. By consuming only clean, pre-computed KPI summaries and trend data as input, the domain can focus entirely on reasoning logic without any data preparation concerns.
 
 **Features**
@@ -188,6 +188,38 @@ The data integration domain does not compute business metrics, detect patterns, 
 
 ## **KPI & Analytics**
 
+The KPI & Analytics domain is designed as a data product that serves as the analytical engine of the platform. It is responsible for transforming normalized operational data into business metrics and maintaining the historical state for trend analysis. The domain owns its internal storage, computation logic, and its output interfaces. The domain responsibility is merely focused on the computation and storage of metrics. It does not interpret data, detect anomalies, or generate natural language insights; those responsibilities are done by the Operational Intelligence domain.
+
+**Features**
+
+-   Compute financial metrics, e.g., monthly burn rate, revenue growth, cash flow from normalized expense and income data.
+
+-   Compute sales and CRM metrics such as conversion rates, deal velocity, and customer churn rates.
+
+-   Store and version the calculated metrics over time to maintain historical records for trend analysis.
+
+-   Structure the pre-computed metrics into a “Gold Layer” organized by domain (Financial vs. Sales/CRM) for retrieval.
+
+-   Expose data serving interface for downstream consumers, specifically the Operational Intelligence Orchestrator Agent.
+
+**Services / Agents / Data Products**
+
+-   **KPI Computation Service: Calculates the business metrics from normalized data inputs.**
+
+    -   **Design Principles: High cohesion and statelessness, the service is focused solely on the metric calculation, and each run is deterministic, relying only on the input data for that period.**
+
+-   **Historical Storage Service: Manages the persistence and versioning of metrics to ensure a reliable data source for historical trends.**
+
+    -   **Design Principles: Autonomy and observability, the service owns its own database, preventing other domains from accessing it. Additionally, it implements observability by tracking data lineage to ensure traceable metrics.**
+
+-   **Data Serving Layer: Exposes the pre-computed tables to downstream domains through a standardized interface.**
+
+    -   **Design Principles: Discoverability and loose coupling, the interface is clearly defined so that the Operational Intelligence Orchestrator can query relevant metrics. This also allows the internal storage schema to be changed without breaking downstream agents.**
+
+**Design Principles Summary**
+
+The KPI & Analytics domain functions as a data product by owning the lifecycle of a business metric from calculation to storage and serving. High cohesion is maintained by separating calculation from storage management, and autonomy is ensured through the domain’s ownership of its data state. By exposing a clearly defined serving interface, the domain maintains loose coupling with the Operational Intelligence layer so that metric calculations and internal data structures can evolve independently. For the architecture design for this domain see @fig-kpi-domain
+
 ## **Reporting & Delivery**
 
 **Bounded context description**: The Reporting & Delivery domain is responsible for composing, formatting, and distributing reports based on the outputs from the Operational Intelligence domain. It owns report templates, composition logic, stakeholder-specific report structures, delivery schedules, and recipient configurations. The domain takes analyzed insights as input and transforms them into readable and well-structured reports, such as PDF documents and summarized email notifications, ensuring that stakeholders receive clear and actionable information in a consistent format.
@@ -232,7 +264,69 @@ The Reporting & Delivery domain does not compute KPIs, perform data ingestion or
 
 ## **Tenant Management**
 
+Bounded context description: The Tenant Management domain is responsible for onboarding SME clients, managing tenant-specific configuration, and controlling user access within the Pulse platform. It owns tenant registration, user accounts, role assignments, connector configuration metadata, and the isolation of tenant-level settings required by other domains. This domain ensures that each SME operates within its own bounded operational space, with the correct users, permissions, and data source configuration in place before any ingestion, analytics, or reporting can occur. The domain does not ingest external business data, compute KPIs, generate operational insights, or deliver reports. Its responsibility is purely administrative and configurational, which makes its boundary clear and defensible within the overall architecture.
+
+**Features:**
+
+-   Register a new SME tenant and initialize its platform workspace
+
+-   Create, update, and deactivate tenant-specific user accounts
+
+-   Assign and manage user roles such as SME Owner, Department Head, and Platform Administrator
+
+-   Store and manage connector configuration metadata per tenant for systems such as Exact, AFAS, and HubSpot
+
+-   Enforce tenant isolation for users, settings, and downstream service access
+
+-   Maintain tenant lifecycle state, for example active, suspended, or offboarded
+
+**Services / Agents / Data Products**
+
+-   Tenant Onboarding Service: Creates a new tenant, initializes the tenant workspace, and registers the baseline configuration required for platform usage.\
+    Design principles: high cohesion, because it focuses solely on tenant creation and initialization; separation of concerns, because onboarding logic is isolated from authentication, analytics, and connector execution.
+
+-   User and Role Management Service: Manages user accounts within each tenant and assigns the correct access roles based on stakeholder responsibilities.\
+    Design principles: high cohesion, because all identity and authorization administration is centralized here; loose coupling, because downstream domains only consume role and tenant context rather than implementing their own user logic.
+
+-   Tenant Configuration Service: Stores and manages tenant-level settings such as connector metadata, report preferences, and domain-specific configuration references.\
+    Design principles: abstraction, because configuration is exposed through a clean internal interface rather than embedded across domains; reusability, because all other domains can rely on one consistent source of tenant configuration.
+
+-   Access Control Service: Enforces tenant boundaries and validates whether a given user or process may access a tenant’s resources or configuration.\
+    Design principles: reliability, because correct access enforcement is essential for multi-tenant integrity; statelessness, because authorization checks should be repeatable and independent per request.
+
+**Design principles summary**
+
+The Tenant Management domain is intentionally designed as a thin generic domain that centralizes administrative responsibilities without absorbing business logic from other domains. High cohesion is achieved by grouping onboarding, user administration, configuration, and access control into clearly scoped services, while loose coupling ensures that downstream domains depend only on tenant context and permissions, not on internal management workflows. By keeping tenant state and configuration explicit, the architecture supports clean multi-tenant isolation and simpler operational governance. This makes the platform easier to scale across multiple SME clients while preserving a clear separation between administration and operational intelligence.
+
 ## **Notification**
+
+**Bounded context description**
+
+The Notification domain is responsible for dispatching event-driven alerts to stakeholders and platform administrators through email, SMS, and Slack. It owns the routing logic that determines which channel to use for a given event, the formatting of alert messages per channel, and the reliable delivery of those messages. The domain is triggered by events emitted from other domains, primarily report delivery confirmations from Reporting & Delivery **and platform-level incidents such as connector failures from Data Integration. I**t does not generate insights, compose reports, or determine the business significance of events; it formats, routes, and delivers notification requests. Note: full report distribution (e.g., PDF attachments) is owned by the Reporting & Delivery domain. This domain handles lightweight alerting only, such as confirmations, warnings, and failure notices.
+
+**Features**
+
+-   Receive notification trigger events from upstream domains via an internal event bus
+
+-   Route each notification to the appropriate channel (email, SMS, Slack) based on event type and recipient configuration
+
+-   Format alert messages per channel, respecting channel-specific constraints (character limits, block formatting)
+
+-   Dispatch notifications through external provider APIs like Slack Webhooks
+
+-   Track delivery status and emit confirmation or failure events for observability
+
+**Services**
+
+**Notification Router Service** Receives incoming notification events and determines the target channel(s) based on event type and recipient preferences. Design principles: loose coupling, as it depends only on a standardised event schema with no direct dependency on emitting domains; high cohesion, as it handles routing logic exclusively.
+
+**Message Formatting Service** Transforms routed notification content into the appropriate channel format, which is short text for SMS, block message for Slack, templated HTML for email alerts. Design principles: reusability, as formatting templates are shared across event types which helps with high cohesion, as all channel-specific formatting is centralised here.
+
+**Dispatch Service** Sends formatted messages to external channel providers and records delivery outcomes. Design principles: autonomy, as it manages its own retry logic independently of upstream services; observability, as it logs delivery status and emits confirmation or failure events for platform monitoring.
+
+**Design principles summary**
+
+The Notification domain is kept thin and generic. Loose coupling to upstream domains is achieved through a standardised event schema on the event bus, allowing any domain to trigger notifications without the Notification domain needing knowledge of the emitting context. Routing, formatting, and dispatch are separated into three cohesive services, meaning a new channel can be added by extending only the Formatting and Dispatch services. Statelessness in the router and formatter, combined with autonomous retry handling in the Dispatch Service, keeps the pipeline resilient and independently scalable
 
 # Architectural Design
 
@@ -240,15 +334,21 @@ The Reporting & Delivery domain does not compute KPIs, perform data ingestion or
 
 ## Member Contribution
 
+**Thom Verzantvoort** contributed to Section 1 (case study framing, stakeholder identification, and domain overview) and led Section 2 for the Operational Intelligence domain, including the multi-agent design and A2A protocol rationale.
+
+**Rick de Rijk** contributed to Section 1 (functional requirements and context diagram) and led Section 2 for the Data Integration and Reporting & Delivery domains, covering the ingestion pipeline, composition, templating, scheduling, and delivery services.
+
+**Tycho van Rooij** led Section 2 for the Notification domain, designing the event-driven alerting architecture including routing, formatting, and dispatch services.
+
+**Jelles Duin** led Section 2 for the KPI & Analytics domain, designing the data product structure, computation services, historical storage, and the Gold Layer serving interface.
+
+**Gilbert Laanen** led Section 2 for the Tenant Management domain, covering tenant onboarding, user and role management, configuration, and access control services.
+
 ## Reflection
 
 # Technology Statement
 
-Use the required template exactly as provided in the assignment brief .
-
-Example format:
-
-During the preparation of this work, we used \[NAME TOOL / SERVICE / VERSION\] in order to \[REASON\]. The following parts of the assignment were affected/generated by AI tool usage: \[SECTIONS\]. After using this tool/service, \[NAME STUDENT(S)\] evaluated the validity of the tool’s outputs and edited the content as needed. As a consequence, \[NAME STUDENT(S)\] take full responsibility for the content of this work.
+During the preparation of this work, we used ChatGPT (GPT-4o) & Claude in order to support grammar and clarity checks, brainstorm initial platform concepts, and guide the domain design process through an interactive questioning approach, prompting us to reflect on design decisions and come up with our own ideas and solutions rather than generating content directly. The following parts of the assignment were affected by AI tool usage: Section 1 (brainstorming and grammar review), Section 2 (design guidance and grammar review), Section 3 (grammar review), and Section 4 (grammar review). After using this tool/service, Rick de Rijk, Thom Verzantvoort, Tycho van Rooij, Jelles Duin, and Gilbert Laanen evaluated the validity of the tool's outputs and edited the content as needed. As a consequence, Rick de Rijk, Thom Verzantvoort, Tycho van Rooij, Jelles Duin, and Gilbert Laanen take full responsibility for the content of this work.
 
 # References
 
@@ -258,8 +358,10 @@ During the preparation of this work, we used \[NAME TOOL / SERVICE / VERSION\] i
 
 ![Domain Diagram](images/Figure%202%20Domain%20Diagram.png){#fig-domain-diagram}
 
-![Operational Intelligence Domain](images/Operational Intelligence Domain.png){#fig-operational-domain}
+![Operational Intelligence Domain](images/Operational%20Intelligence%20Domain.png){#fig-operational-domain}
 
-![Data Integration Domain](images/Context Diagram Data integration service.png){#fig-data-integration}
+![Data Integration Domain](images/Context%20Diagram%20Data%20integration%20service.png){#fig-data-integration}
+
+![KPI-Domain](images/KPI-Domain-design.png){#fig-kpi-domain}
 
 ![Domain-Report-Diagram](images/Domain-Report.png){#fig-diagram-report}
