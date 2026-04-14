@@ -34,7 +34,9 @@ The **SME Owner / CEO** is the primary recipient of Pulse's intelligence. They r
 
 The **Pulse Platform Administrator** is an internal actor responsible for onboarding new SME clients, managing data source connectors, and maintaining platform health. This role justifies the Tenant Management domain.
 
-**External Systems** such as Exact Online, AFAS, and HubSpot are the data providers. They do not interact with Pulse directly as users but represent the system boundary through which operational data enters the platform. We refer to @fig-context-diagram
+**External Systems** such as Exact Online, AFAS, and HubSpot are the data providers. They do not interact with Pulse directly as users but represent the system boundary through which operational data enters the platform.
+
+![Stakeholders Diagram](images/Diagram-stakeholders.png){#diagram-stakeholders}
 
 ## **High-Level Functional Requirements**
 
@@ -137,7 +139,9 @@ The Insight Synthesis Agent collects all agent outputs and assembles them into a
 
 **Design principles summary**
 
-The Operational Intelligence domain is designed as a multi-agent system where each agent encapsulates a single, well-defined reasoning responsibility, resulting in high cohesion within agents and loose coupling between them. Agent-to-agent communication via the A2A protocol ensures that agents remain interoperable and independently evolvable without direct dependencies on each other's internals. The Orchestrator Agent applies the coarse granularity principle to govern the full workflow, while domain-specific and cross-domain agents apply fine granularity to keep reasoning concerns clearly separated. Statelessness in the Insight Synthesis Agent guarantees that downstream domains receive consistent and reproducible outputs. Taken together, these principles make the reasoning pipeline modular, observable, and resilient to changes in individual agent logic or LLM behaviour. See the figure for this domain: @fig-operational-domain
+The Operational Intelligence domain is designed as a multi-agent system where each agent encapsulates a single, well-defined reasoning responsibility, resulting in high cohesion within agents and loose coupling between them. Agent-to-agent communication via the A2A protocol ensures that agents remain interoperable and independently evolvable without direct dependencies on each other's internals. The Orchestrator Agent applies the coarse granularity principle to govern the full workflow, while domain-specific and cross-domain agents apply fine granularity to keep reasoning concerns clearly separated. Statelessness in the Insight Synthesis Agent guarantees that downstream domains receive consistent and reproducible outputs. Taken together, these principles make the reasoning pipeline modular, observable, and resilient to changes in individual agent logic or LLM behaviour.
+
+![Operational Intelligence Domain](images/Operational%20Intelligence%20Domain.png){#operational-intelligence-domain}
 
 ## **Data Integration**
 
@@ -204,17 +208,17 @@ The KPI & Analytics domain is designed as a data product that serves as the anal
 
 **Services / Agents / Data Products**
 
--   **KPI Computation Service: Calculates the business metrics from normalized data inputs.**
+-   **KPI Computation Service:** Calculates the business metrics from normalized data inputs.
 
-    -   **Design Principles: High cohesion and statelessness, the service is focused solely on the metric calculation, and each run is deterministic, relying only on the input data for that period.**
+    -   Design Principles: High cohesion and statelessness, the service is focused solely on the metric calculation, and each run is deterministic, relying only on the input data for that period.
 
--   **Historical Storage Service: Manages the persistence and versioning of metrics to ensure a reliable data source for historical trends.**
+-   **Historical Storage Service:** Manages the persistence and versioning of metrics to ensure a reliable data source for historical trends.
 
-    -   **Design Principles: Autonomy and observability, the service owns its own database, preventing other domains from accessing it. Additionally, it implements observability by tracking data lineage to ensure traceable metrics.**
+    -   Design Principles: Autonomy and observability, the service owns its own database, preventing other domains from accessing it. Additionally, it implements observability by tracking data lineage to ensure traceable metrics.
 
--   **Data Serving Layer: Exposes the pre-computed tables to downstream domains through a standardized interface.**
+-   **Data Serving Layer:** Exposes the pre-computed tables to downstream domains through a standardized interface.
 
-    -   **Design Principles: Discoverability and loose coupling, the interface is clearly defined so that the Operational Intelligence Orchestrator can query relevant metrics. This also allows the internal storage schema to be changed without breaking downstream agents.**
+    -   Design Principles: Discoverability and loose coupling, the interface is clearly defined so that the Operational Intelligence Orchestrator can query relevant metrics. This also allows the internal storage schema to be changed without breaking downstream agents.
 
 **Design Principles Summary**
 
@@ -242,21 +246,21 @@ The Reporting & Delivery domain does not compute KPIs, perform data ingestion or
 
 **Services / Agents / Data Products**
 
--   **Composition Service: Assembles report sections by combining insights from the Operational Intelligence domain into a structured, tenant-specific report.**
+-   **Composition Service:** Assembles report sections by combining insights from the Operational Intelligence domain into a structured, tenant-specific report.
 
-    -   **Design principles: High cohesion and separation of concerns, as it focus solely on assembling a report content without handling formatting or delivery**
+    -   Design principles: High cohesion and separation of concerns, as it focus solely on assembling a report content without handling formatting or delivery
 
--   **Template Service: Applies predefined report templates to structure insights into consistent layouts and sections for each tenant.**
+-   **Template Service:** Applies predefined report templates to structure insights into consistent layouts and sections for each tenant.
 
-    -   **Design principles: Abstraction and reusability, as templates standardize report structure across tenants while allowing configuration.**
+    -   Design principles: Abstraction and reusability, as templates standardize report structure across tenants while allowing configuration.
 
--   **Scheduling Service: Triggers report generation and delivery based on configured intervals (e.g. weekly schedules).**
+-   **Scheduling Service:** Triggers report generation and delivery based on configured intervals (e.g. weekly schedules).
 
-    -   **Design principles: Autonomy and statelessness, enabling independent and repeatable scheduling without dependency on other services.**
+    -   Design principles: Autonomy and statelessness, enabling independent and repeatable scheduling without dependency on other services.
 
--   **Delivery Service: Distributes generated reports to stakeholders via configured channels (e.g. email with PDF attachments and summary messages).**
+-   **Delivery Service:** Distributes generated reports to stakeholders via configured channels (e.g. email with PDF attachments and summary messages).
 
-    -   **Design principles: Loose coupling and scalability, as delivery mechanisms are decoupled from report generation and can evolve independently**
+    -   Design principles: Loose coupling and scalability, as delivery mechanisms are decoupled from report generation and can evolve independently
 
 \
 **Design principles summary\
@@ -302,7 +306,7 @@ The Tenant Management domain is intentionally designed as a thin generic domain 
 
 **Bounded context description**
 
-The Notification domain is responsible for dispatching event-driven alerts to stakeholders and platform administrators through email, SMS, and Slack. It owns the routing logic that determines which channel to use for a given event, the formatting of alert messages per channel, and the reliable delivery of those messages. The domain is triggered by events emitted from other domains, primarily report delivery confirmations from Reporting & Delivery **and platform-level incidents such as connector failures from Data Integration. I**t does not generate insights, compose reports, or determine the business significance of events; it formats, routes, and delivers notification requests. Note: full report distribution (e.g., PDF attachments) is owned by the Reporting & Delivery domain. This domain handles lightweight alerting only, such as confirmations, warnings, and failure notices.
+The Notification domain is responsible for dispatching event-driven alerts to stakeholders and platform administrators through email, SMS, and Slack. It owns the routing logic that determines which channel to use for a given event, the formatting of alert messages per channel, and the reliable delivery of those messages. The domain is triggered by events emitted from other domains, primarily report delivery confirmations from Reporting & Delivery and platform-level incidents such as connector failures from Data Integration.It does not generate insights, compose reports, or determine the business significance of events; it formats, routes, and delivers notification requests. Note: full report distribution (e.g., PDF attachments) is owned by the Reporting & Delivery domain. This domain handles lightweight alerting only, such as confirmations, warnings, and failure notices.
 
 **Features**
 
@@ -354,11 +358,7 @@ During the preparation of this work, we used ChatGPT (GPT-4o) & Claude in order 
 
 # Appendix
 
-![Context Diagram](images/Context_diagram.png){#fig-context-diagram}
-
 ![Domain Diagram](images/Figure%202%20Domain%20Diagram.png){#fig-domain-diagram}
-
-![Operational Intelligence Domain](images/Operational%20Intelligence%20Domain.png){#fig-operational-domain}
 
 ![Data Integration Domain](images/Context%20Diagram%20Data%20integration%20service.png){#fig-data-integration}
 
