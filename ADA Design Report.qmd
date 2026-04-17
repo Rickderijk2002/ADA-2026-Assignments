@@ -2,7 +2,18 @@
 title: "Assignment 1 Design Report"
 author: "Group 5"
 subtitle: "Rick de Rijk, Thom Verzantvoort, Tycho van Rooij, Jelles Duin, Gilbert Laanen"
-format: pdf
+format:
+  pdf:
+    include-in-header:
+      text: |
+        \usepackage{enumitem}
+        \setlist[itemize]{itemsep=2pt, topsep=2pt, parsep=0pt, partopsep=0pt}
+        \setlist[enumerate]{itemsep=2pt, topsep=2pt, parsep=0pt, partopsep=0pt}
+        \usepackage{setspace}
+        \setstretch{0.96}
+        \usepackage{parskip}
+        \setlength{\parskip}{0.3em}
+        \setlength{\parindent}{0pt}
 geometry:
       - margin=2cm
 editor: visual
@@ -145,9 +156,9 @@ The Operational Intelligence domain is designed as a multi-agent system where ea
 
 ## **Data Integration**
 
-**Bounded context description**: The data integration domain is responsible for ingesting, standardizing, and storing operational data from external systems such as financial platforms and CRM tools. It owns the full data ingestion pipeline, including API connectivity, data retrieval, validation, transformation into a unified schema, and persistence of both raw and normalized datasets. The domain ensures that heterogeneous data from multiple sources is made consistent and usable for downstream domains. 
+The data integration domain is classified as a supporting domain because it enables downstream analytical and reasoning capabilities by providing clean, standardized data, but does not directly deliver business value to end users.The Data Integration domain is responsible for ingesting, standardizing, and storing operational data from external systems such as financial platforms and CRM tools. It owns the full data ingestion pipeline, including API connectivity, data retrieval, validation, transformation into a unified schema, and persistence of both raw and normalized datasets. The domain ensures that heterogeneous data from multiple sources is made consistent and usable for downstream domains.
 
-The data integration domain does not compute business metrics, detect patterns, anomalies or generate insights. It also does not perform domain-level business logic or analytical reasoning. Its responsibility is limited to syntactic transformation and reliable data provisioning, acting as a data plumber layer between external systems and internal analytic components. 
+The data integration domain does not compute business metrics, detect patterns or anomalies, or generate insights. It also does not perform domain-level business logic or analytical reasoning. Its responsibility is limited to syntactic transformation and reliable data provisioning, acting as a data plumbing layer between external systems and internal analytical components.
 
 **Features:**
 
@@ -165,30 +176,35 @@ The data integration domain does not compute business metrics, detect patterns, 
 
 -   Execute scheduled batch ingestion and transformation pipelines (e.g., weekly updates)
 
-**Services / Data Products**
+**Services / Agents / Data Products**
 
-**Connector Service:** Handles connectivity with external systems and retrieves data via APIs on a scheduled or triggered basis.
+-   **Connector Service:** The Connector Service is a microservice responsible for retrieving data from external systems via APIs on a scheduled or triggered basis. It is classified as a microservice because it encapsulates a single integration capability and operates independently per source system.
 
--   Design principles: Loose coupling and reusability, as connectors are isolated per source system and can be extended independently.
+    -   **Design principles**: Loose coupling and reusability, as connectors are isolated per source system and can be extended independently without affecting other parts of the ingestion pipeline.
 
-**Schema Mapping Service:** Maps source-specific data structures (e.g., financial records, CRM fields) into a unified internal schema.
+    -   **An alternative:** would have been to implement a single unified ingestion service for all external sources, but this was rejected because it would reduce modularity, increase coupling between integrations, and make it harder to extend or maintain individual connectors.
 
--   Design principles: High cohesion and abstraction, as it encapsulates all schema transformation logic in one place.
+-   **Schema Mapping Service:** The Schema Mapping Service is a data transformation service that maps source-specific data structures, such as financial records and CRM fields, into a unified internal schema. It is classified as a transformation service because it performs a dedicated and deterministic schema-conversion step within the ingestion pipeline.
 
-**Data Validation Service:** Validates incoming data against schema definitions and quality constraints before further processing.
+    -   **Design principles:** High cohesion and abstraction, as it encapsulates all schema transformation logic in one place.
 
--   Design principles: Autonomy and reliability, ensuring data correctness without relying on downstream domains.
+    -   **Alternative**: An alternative would have been to embed schema mapping logic directly inside each connector, but this was rejected because it would duplicate transformation logic across integrations and reduce maintainability. 
 
-**Normalization Service:** Transforms validated data into a standardized format, resolving inconsistencies in structure, naming, and representation.
+-   **Data Validation Service:** The Data Validation Service is a validation component that checks incoming data against schema definitions and quality constraints before further processing. It is classified as a validation service because its sole responsibility is to ensure data correctness at the ingestion stage.
 
--   Design principles: High cohesion and consistency, as all transformation logic is centralized and deterministic.
+    -   **Design principles:** Autonomy and reliability, ensuring data correctness without relying on downstream domains.
 
-**Data Storage Service:** Persists both raw and normalized datasets in appropriate storage systems for traceability and downstream access.
+-   **Normalization Service:** The Normalization Service is a transformation component that converts validated data into a standardized internal format, resolving inconsistencies in structure, naming, and representation. It is classified as a transformation service because it performs deterministic normalization of source data for downstream use**.**
 
--   Design principles: Separation of concerns and scalability, allowing storage mechanisms to evolve independently.
+    -   **Design principles:** High cohesion and consistency, as all transformation logic is centralized and deterministic.
 
-**Design principles summary:\
-**The Data Integration domain is designed around strong separation of concerns and high cohesion, where each service performs a clearly defined step in the ingestion pipeline. Loose coupling between services enables independent evolution of connectors, transformation logic, and storage mechanisms, which is essential when integrating multiple heterogeneous external systems. The domain is intentionally stateless in its processing steps, allowing scalable and repeatable batch execution. By strictly avoiding business logic and analytical reasoning, the domain maintains a clear boundary with downstream domains such as KPI & Analytics and Operational Intelligence, ensuring a modular and maintainable architecture.The Data Integration flow is intentionally shown at an abstract level. The normalization stage includes internal validation, schema mapping, and transformation steps before the resulting data is persisted in the unified data store. See @fig-data-integration
+-   **Data Storage Service:** The Data Storage Service is a storage component responsible for persisting both raw and normalized datasets for traceability and downstream access. It is classified as a storage service because it owns the persistence layer of the Data Integration domain.
+
+    -   **Design principles:** Separation of concerns and scalability, allowing storage mechanisms to evolve independently**.**
+
+    -   **Alternative:** An alternative would have been to store only normalized data and discard raw ingested data, but this was rejected because retaining raw data improves traceability, debugging, and reprocessing capabilities. 
+
+**Design principles summary:**The Data Integration domain is designed around strong separation of concerns and high cohesion, where each service performs a clearly defined step in the ingestion pipeline. Loose coupling between services enables independent evolution of connectors, transformation logic, and storage mechanisms, which is essential when integrating multiple heterogeneous external systems.The processing steps within the domain are intentionally stateless, allowing scalable and repeatable batch execution, while state persistence is explicitly handled by the Data Storage Service. By strictly avoiding business logic and analytical reasoning, the domain maintains a clear boundary with downstream domains such as KPI & Analytics and Operational Intelligence.This design ensures that the domain remains modular, maintainable, and easily extensible when new data sources or schema variations are introduced, without impacting downstream analytical components. The visualization of this domain you can see here: @fig-data-integration
 
 ## **KPI & Analytics**
 
@@ -226,11 +242,13 @@ The KPI & Analytics domain functions as a data product by owning the lifecycle o
 
 ## **Reporting & Delivery**
 
-**Bounded context description**: The Reporting & Delivery domain is responsible for composing, formatting, and distributing reports based on the outputs from the Operational Intelligence domain. It owns report templates, composition logic, stakeholder-specific report structures, delivery schedules, and recipient configurations. The domain takes analyzed insights as input and transforms them into readable and well-structured reports, such as PDF documents and summarized email notifications, ensuring that stakeholders receive clear and actionable information in a consistent format.
+The Reporting & Delivery domain is classified as a supporting domain because it enables the delivery of insights generated by the core Operational Intelligence domain, but does not itself perform analytical reasoning or generate business value independently.
 
-The Reporting & Delivery domain does not compute KPIs, perform data ingestion or transformation, or reason across signals. It does not generate or interpret business insights, as this is the responsibility of the KPI & Analytics and Operational Intelligence domains. Instead, it focuses solely on presentation, assemble, scheduling, and delivery of already generated insights, maintaining a clear boundary between intelligence generation and information communication.
+The Reporting & Delivery domain is responsible for composing, formatting, and distributing reports based on the outputs from the Operational Intelligence domain. It owns report templates, composition logic, stakeholder-specific report structures, delivery schedules, and recipient configurations. The domain takes analyzed insights as input and transforms them into readable and well-structured reports, such as PDF documents and summarized email notifications, ensuring that stakeholders receive clear and actionable information in a consistent format.
 
-**Features:**
+The Reporting & Delivery domain does not compute KPIs, perform data ingestion or transformation, or reason across signals. It does not generate or interpret business insights, as this is the responsibility of the KPI & Analytics and Operational Intelligence domains. Instead, it focuses solely on presentation, assembly, scheduling, and delivery of already generated insights, maintaining a clear boundary between intelligence generation and information communication.
+
+### **Features:**
 
 -   Assemble report sections into a tenant-specific report based on predefined templates
 
@@ -244,27 +262,34 @@ The Reporting & Delivery domain does not compute KPIs, perform data ingestion or
 
 -   Manage report distribution settings, including recipients and delivery channels
 
-**Services / Data Products:**
+**Services / Agents / Data Products**
 
-**Composition Service:** Assembles report sections by combining insights from the Operational Intelligence domain into a structured, tenant-specific report.
+-   **Composition Service:** The Composition Service is a microservice responsible for assembling report sections by combining structured insights from the Operational Intelligence domain into a tenant-specific report. It is classified as a microservice because it encapsulates a single business capability and operates independently within the reporting pipeline.
 
--   Design principles: High cohesion and separation of concerns, as it focus solely on assembling a report content without handling formatting or delivery
+    -   **Design principles:** High cohesion and separation of concerns, as it focus solely on assembling a report content without handling formatting or delivery
 
-**Template Service:** Applies predefined report templates to structure insights into consistent layouts and sections for each tenant.
+    -   **An alternative** would have been to let the Operational Intelligence domain generate fully composed reports, but this was rejected because it would mix reasoning and presentation concerns, violating separation of concerns.
 
--   Design principles: Abstraction and reusability, as templates standardize report structure across tenants while allowing configuration.
+-   **Template Service:** The Template Service is a template management component that applies predefined templates to structure insights into consistent layouts and sections for each tenant. It is classified as a template service because it separates presentation structure from report content. 
 
-**Scheduling Service:** Triggers report generation and delivery based on configured intervals (e.g. weekly schedules).
+    -   **Design principles:** Abstraction and reusability, as templates standardize report structure across tenants while allowing configuration.
 
--   Design principles: Autonomy and statelessness, enabling independent and repeatable scheduling without dependency on other services.
+    -   **An alternative** would have been to hardcode report structures within the Composition Service, but this was rejected because it would reduce flexibility and limit reuse across tenants.
 
-**Delivery Service:** Distributes generated reports to stakeholders via configured channels (e.g. email with PDF attachments and summary messages).
+-   **Scheduling Service:** The Scheduling Service is a scheduling component responsible for triggering report generation and delivery based on configured intervals. It is classified as a scheduling service because it manages time-based orchestration independently of report generation logic. 
 
--   Design principles: Loose coupling and scalability, as delivery mechanisms are decoupled from report generation and can evolve independently
+    -   **Design principles:** Autonomy and statelessness, enabling independent and repeatable scheduling without dependency on other services
 
-\
+    -   **An alternative** would have been to trigger reporting exclusively through upstream events, but this was rejected because reporting requires predictable, time-based delivery independent of pipeline execution timing. .
+
+-   **Delivery Service:** The Delivery Service is a microservice responsible for distributing generated reports to stakeholders via configured channels such as email and PDF attachments. It is classified as a microservice because it encapsulates delivery logic and can scale independently of report generation. 
+
+    -   **Design principles:** Loose coupling and scalability, as delivery mechanisms are decoupled from report generation and can evolve independently
+
+    -   **An alternative** would have been to embed delivery logic within the Composition Service, but this was rejected because it would tightly couple report generation and distribution, reducing flexibility and scalability. 
+
 **Design principles summary\
-**The Reporting & Delivery domain is designed with strong separation of concerns, where composition, templating, scheduling, and delivery are handled by distinct services. High cohesion ensures that each service focuses on a single responsibility, while loose coupling allows independent evolution of report generation and delivery mechanisms. The domain operates in a stateless and configurable manner, supporting scalable and repeatable report generation. By avoiding analytical logic and relying on upstream domains for insights, it maintains a clear boundary between intelligence generation and information presentation. And i refer to the diagram which has been made for this domain @fig-diagram-report
+**The Reporting & Delivery domain is designed with strong separation of concerns, where composition, templating, scheduling, and delivery are handled by distinct services. High cohesion ensures that each service focuses on a single responsibility, while loose coupling allows independent evolution of report generation and delivery mechanisms.The domain operates in a stateless and configurable manner at the service level, supporting scalable and repeatable report generation, while configuration and delivery state are managed explicitly where required. By avoiding analytical logic and relying on upstream domains for insights, it maintains a clear boundary between intelligence generation and information presentation.This design ensures that reporting functionality remains modular, flexible, and easily extensible, allowing new report formats, templates, and delivery channels to be introduced without impacting upstream domains. And i refer to the diagram which has been made for this domain @fig-diagram-report
 
 ## **Tenant Management**
 
@@ -386,9 +411,17 @@ The Agent-to-Agent (A2A) protocol is the communication layer used exclusively wi
 
 ### Security (API Gateway + JWT Access)
 
+External actors (SME Owner, Department Heads, Platform Admin) all come through a single gateway that validates a tenant-scoped JWT. The token carries tenant ID and role claims, so downstream domains can enforce tenant isolation without calling back to Tenant Management on every request. This directly supports the multi-tenant architecture.
+
 ### Resilience (Circuit Breaker pattern)
 
+The Circuit Breaker pattern is a resilience mechanism that wraps outbound calls in a stateful proxy which monitors failure rates across three states: closed (requests pass through normally), open (requests fail immediately without reaching the target), and half-open (limited probe requests test whether the target has recovered). In the Pulse architecture, it is applied to the Connector Service within the Data Integration domain, which calls external APIs such as Exact Online, AFAS, and HubSpot to ingest operational data. These are third-party dependencies outside the platform's control that may experience downtime or degraded performance. When a source system becomes unavailable, the circuit opens and the Connector Service fails fast rather than repeatedly hitting the unresponsive endpoint, preventing the ingestion pipeline from stalling. While the circuit is open, the service emits a ConnectorFailure event to the event bus, which the Notification domain consumes to alert the Platform Administrator immediately.
+
+The alternative considered was a Rate Limiter pattern. While rate limiting is effective for protecting a service from being overwhelmed by incoming traffic, it addresses a different problem, which is throttling inbound load rather than handling outbound dependency failure. The Circuit Breaker was chosen because it directly addresses the risk of cascading failures when calling unreliable third-party systems, provides an explicit recovery mechanism through the half-open state, and integrates naturally with the platform's event bus for real-time failure alerting.
+
 ### Observability (Distributed Tracing with Correlation IDs)
+
+Since a single Pulse reporting cycle spans Data Integration → KPI & Analytics → Operational Intelligence → Reporting & Delivery, each crossing a domain boundary via the event bus, we need a run_id or trace_id propagated through every event. Without it we cannot reconstruct what happened in a given cycle or debug a failed run. This ties directly to the reasoning trace log we already described for the Orchestrator Agent.
 
 # Member Contribution and Reflection
 
@@ -421,3 +454,4 @@ During the preparation of this work, we used ChatGPT (GPT-4o) & Claude in order 
 ![KPI-Domain](images/KPI-Domain-design.png){#fig-kpi-domain}
 
 ![Domain-Report-Diagram](images/Domain-Report.png){#fig-diagram-report}
+
