@@ -248,7 +248,7 @@ The Reporting & Delivery domain is responsible for composing, formatting, and di
 
 The Reporting & Delivery domain does not compute KPIs, perform data ingestion or transformation, or reason across signals. It does not generate or interpret business insights, as this is the responsibility of the KPI & Analytics and Operational Intelligence domains. Instead, it focuses solely on presentation, assembly, scheduling, and delivery of already generated insights, maintaining a clear boundary between intelligence generation and information communication.
 
-### **Features:**
+**Features:**
 
 -   Assemble report sections into a tenant-specific report based on predefined templates
 
@@ -383,13 +383,15 @@ Tenant Management sits orthogonally to this pipeline. It does not participate in
 
 -   Third, it enables non-blocking execution, allowing the pipeline to progress asynchronously without any domain holding a connection open while waiting for a downstream response.
 
-The alternative of chaining REST calls between domains was rejected precisely because it would have introduced tight temporal coupling, where the failure or slowness of any single domain would propagate upstream and stall the entire pipeline.
+The alternative of chaining REST calls between domains was rejected precisely because it would have introduced tight temporal coupling, where the failure or slowness of any single domain would propagate upstream and stall the entire pipeline. The Architecture design can be seen here below:
+
+![Design-Architecture](images/ADA-Design-Architecture.png){#fig-design-architecture-section3}
 
 ## Component Descriptions
 
 ### Event Bus
 
-The event bus is the central asynchronous messaging infrastructure that enables loose coupling between domains. Domains publish events (e.g., "DataIngestionCompleted," "KPIComputationCompleted," "InsightGenerationCompleted," "ReportDelivered") when they finish their work, and subscribing domains are triggered independently. The bus persists events until subscribers are available, ensuring no signal is lost if a downstream domain is temporarily unavailable. It also carries failure events (e.g., "DataIngestionFailed") that the Notification domain subscribes to for platform-wide alerting.
+The event bus is the central asynchronous messaging infrastructure that implements the Pub/Sub pattern described in Section 3.1. Domains publish events (e.g., DataIngestionCompleted, KPIComputationCompleted, InsightGenerationCompleted, ReportDelivered) when they finish their work, and subscribing domains are triggered independently. The bus persists events until subscribers are available, ensuring no signal is lost if a downstream domain is temporarily unavailable. It also carries failure events (e.g., DataIngestionFailed) that the Notification domain subscribes to for platform-wide alerting.
 
 ### API Gateway
 
@@ -411,7 +413,9 @@ The Agent-to-Agent (A2A) protocol is the communication layer used exclusively wi
 
 ### Security (API Gateway + JWT Access)
 
-External actors (SME Owner, Department Heads, Platform Admin) all come through a single gateway that validates a tenant-scoped JWT. The token carries tenant ID and role claims, so downstream domains can enforce tenant isolation without calling back to Tenant Management on every request. This directly supports the multi-tenant architecture.
+The API Gateway pattern centralises all external access to the platform through a single entry point that handles authentication, request routing, and tenant-level access control. In the Pulse architecture, every request from external actors such as the SME Owner, Department Heads, and Platform Administrator passes through the API Gateway before reaching any internal domain. The gateway validates a tenant-scoped JSON Web Token (JWT) on each request, where the token carries tenant ID and role claims. This allows downstream domains to enforce tenant isolation and role-based access directly from the token without calling back to the Tenant Management domain on every request, reducing latency and keeping business services focused on their own responsibilities. The gateway also applies rate limiting to protect internal services from excessive external traffic. This directly supports the multi-tenant architecture, as every request is scoped to a specific tenant before it reaches any domain.
+
+The alternative considered was decentralised authentication, where each domain would validate credentials and enforce access control independently. This was rejected because it would duplicate security logic across every domain, increasing the risk of inconsistent enforcement and making it harder to update authentication policies platform-wide. The API Gateway was chosen because it centralises security concerns in a single component, ensures consistent tenant isolation across all domains, and allows security policies to be modified in one place without touching individual domain services.
 
 ### Resilience (Circuit Breaker pattern)
 
@@ -421,23 +425,35 @@ The alternative considered was a Rate Limiter pattern. While rate limiting is ef
 
 ### Observability (Distributed Tracing with Correlation IDs)
 
-Since a single Pulse reporting cycle spans Data Integration → KPI & Analytics → Operational Intelligence → Reporting & Delivery, each crossing a domain boundary via the event bus, we need a run_id or trace_id propagated through every event. Without it we cannot reconstruct what happened in a given cycle or debug a failed run. This ties directly to the reasoning trace log we already described for the Orchestrator Agent.
+Distributed Tracing with Correlation IDs is an observability mechanism that propagates a unique identifier through every step of a workflow, making it possible to reconstruct the full execution path across service boundaries. In the Pulse architecture, a single reporting cycle spans four domain boundaries: Data Integration, KPI & Analytics, Operational Intelligence, and Reporting & Delivery, each communicating through the event bus. A trace_id is generated at the start of each cycle when the Scheduler triggers Data Integration and is attached to every subsequent event such as DataIngestionCompleted, KPIComputationCompleted, InsightGenerationCompleted, and ReportDelivered. This allows platform operators to trace a complete reporting run from ingestion to delivery, identify exactly where a failure occurred, and correlate it with the reasoning trace log maintained by the Orchestrator Agent within the Operational Intelligence domain.
+
+The alternative considered was centralised logging without correlation, where each domain logs independently and operators query logs by timestamp to reconstruct a run. This was rejected because timestamp-based correlation is unreliable when multiple tenant pipelines run concurrently, making it difficult to distinguish which log entries belong to which reporting cycle. Correlation IDs were chosen because they provide a deterministic link across all domain boundaries, enabling precise end-to-end debugging and directly supporting the failsafe alerting described in the Notification domain, where a failed run must be traceable back to its root cause.
 
 # Member Contribution and Reflection
 
 ## Member Contribution
 
-**Thom Verzantvoort** contributed to Section 1 (case study framing, stakeholder identification, and domain overview) and led Section 2 for the Operational Intelligence domain, including the multi-agent design and A2A protocol rationale.
+Thom Verzantvoort contributed to Section 1 (case study framing, stakeholder identification, and domain overview) and led Section 2 for the Operational Intelligence domain, including the multi-agent design and A2A protocol rationale. Thom also led Section 3.1, developing the overall architectural overview and event-driven system design.
 
-**Rick de Rijk** contributed to Section 1 (functional requirements and context diagram) and led Section 2 for the Data Integration and Reporting & Delivery domains, covering the ingestion pipeline, composition, templating, scheduling, and delivery services.
+Rick de Rijk contributed to Section 1 (functional requirements and context diagram) and led Section 2 for the Data Integration and Reporting & Delivery domains, covering the ingestion pipeline, composition, templating, scheduling, and delivery services. Rick also led Section 3.2, describing the architectural components including the event bus, API gateway, scheduler, per-domain databases, and the A2A communication layer.
 
-**Tycho van Rooij** led Section 2 for the Notification domain, designing the event-driven alerting architecture including routing, formatting, and dispatch services.
+Tycho van Rooij led Section 2 for the Notification domain, designing the event-driven alerting architecture including routing, formatting, and dispatch services. Tycho also completed Section 3.3, applying and justifying architectural design patterns including security, resilience, and observability.
 
-**Jelles Duin** led Section 2 for the KPI & Analytics domain, designing the data product structure, computation services, historical storage, and the Gold Layer serving interface.
+Jelles Duin led Section 2 for the KPI & Analytics domain, designing the data product structure, computation services, historical storage, and the Gold Layer serving interface.
 
-**Gilbert Laanen** led Section 2 for the Tenant Management domain, covering tenant onboarding, user and role management, configuration, and access control services.
+Gilbert Laanen led Section 2 for the Tenant Management domain, covering tenant onboarding, user and role management, configuration, and access control services.
 
 ## Reflection
+
+The collaboration within the team was effective and well-structured throughout the project. A clear division of responsibilities was established early on, with each team member taking ownership of a specific domain in Section 2 or a major architectural component in Section 3. This task allocation worked well, as it allowed each member to develop a deep understanding of their assigned domain while contributing meaningfully to the overall system design.
+
+Regular meetings were held to discuss progress, align on design decisions, and review each other’s work. These discussions were essential to maintain consistency across the domains and to ensure that individual contributions aligned with the overall architecture. Feedback was actively shared, which helped improve both the clarity and the quality of the final report.
+
+Working on the domains independently proved to be efficient in the initial phases, as it allowed parallel progress and focused design thinking within each bounded context. However, the most challenging part of the project was integrating the domains into a cohesive architecture. Ensuring that all domains interacted correctly, especially in the event-driven pipeline from Data Integration through KPI & Analytics and Operational Intelligence to Reporting & Delivery, required careful coordination and multiple iterations. This is also reflected in the domain diagram and architecture description, where dependencies and communication patterns had to be aligned across all domains.
+
+Another challenge was maintaining consistent design principles across independently developed sections. Aligning concepts such as loose coupling, high cohesion, and clear domain boundaries across all domains required additional discussion and refinement.
+
+Overall, the team functioned well, with strong communication, clear task ownership, and a collaborative approach to problem-solving. The combination of independent domain design and collective integration ultimately resulted in a coherent and well-structured architecture.
 
 # Technology Statement
 
@@ -454,4 +470,3 @@ During the preparation of this work, we used ChatGPT (GPT-4o) & Claude in order 
 ![KPI-Domain](images/KPI-Domain-design.png){#fig-kpi-domain}
 
 ![Domain-Report-Diagram](images/Domain-Report.png){#fig-diagram-report}
-
