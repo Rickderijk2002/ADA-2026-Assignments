@@ -1,5 +1,4 @@
 ---
-title: "Assignment 1 Design Report"
 author: "Group 5"
 subtitle: "Rick de Rijk, Thom Verzantvoort, Tycho van Rooij, Jelles Duin, Gilbert Laanen"
 format:
@@ -17,15 +16,39 @@ format:
 geometry:
       - margin=2cm
 editor: visual
-toc: true
-lof: true
+toc: false
+lof: false
 number-sections: true
 bibliography: references.bib
 ---
-
+```{=latex}
+\begin{titlepage}
+  \centering
+  \vspace*{2cm}
+  
+  {\Huge\bfseries Assignment 1 Design Report\par}
+  \vspace{1cm}
+  {\Large Group 5\par}
+  \vspace{0.5cm}
+  {\normalsize Rick de Rijk (2151940), Thom Verzantvoort (2038050), Tycho van Rooij (2080652), Jelles Duin (2146737), Gilbert Laanen (2151170)\par}
+  
+  \vspace{2cm}
+  \includegraphics[width=0.6\textwidth]{images/Pulse Logo.png}
+  
+  \vfill
+  \begin{flushright}
+    \includegraphics[width=0.3\textwidth]{images/JADS_logo.png}
+  \end{flushright}
+\end{titlepage}
+```
 \newpage
+```{=latex}
+\tableofcontents
+\listoffigures
+\newpage
+```
 
-# Section 1: Case Study
+# Case Study
 
 ## **Business Scenario: "Pulse: Operational Intelligence Platform for SMEs"**
 
@@ -53,17 +76,17 @@ The **Pulse Platform Administrator** is an internal actor responsible for onboar
 
 The platform must support the following high-level capabilities:
 
-**Data ingestion and normalization.** Pulse must connect to external financial and CRM systems, retrieve operational data on a scheduled basis, and normalize it into a unified internal format for downstream processing.
+**Data ingestion and normalization:** Pulse must connect to external financial and CRM systems, retrieve operational data on a scheduled basis, and normalize it into a unified internal format for downstream processing.
 
-**KPI computation.** The platform must compute a defined set of business metrics, including revenue growth, burn rate, cash flow position, pipeline conversion rate, and churn rate, from the normalized data and maintain a historical record of these metrics over time.
+**KPI computation:** The platform must compute a defined set of business metrics, including revenue growth, burn rate, cash flow position, pipeline conversion rate, and churn rate, from the normalized data and maintain a historical record of these metrics over time.
 
-**Operational intelligence generation.** An AI agent layer must analyze computed KPIs, detect anomalies and trends, reason across signals from different operational domains, and generate natural language insights with actionable recommendations.
+**Operational intelligence generation:** An AI agent layer must analyze computed KPIs, detect anomalies and trends, reason across signals from different operational domains, and generate natural language insights with actionable recommendations.
 
-**Report composition and delivery.** Insights must be composed into structured, readable reports and automatically delivered to the SME owner and relevant department heads according to a configured schedule.
+**Report composition and delivery:** Insights must be composed into structured, readable reports and automatically delivered to the SME owner and relevant department heads according to a configured schedule.
 
-**Tenant and user management.** The platform must support onboarding of SME clients, management of user accounts and roles, and configuration of data source connections per tenant.
+**Tenant and user management:** The platform must support onboarding of SME clients, management of user accounts and roles, and configuration of data source connections per tenant.
 
-**Event-driven notifications.** The platform must send lightweight alerts for operationally significant events, such as critical anomaly detection, report delivery confirmation, or data connector failures.
+**Event-driven notifications:** The platform must send lightweight alerts for operationally significant events, such as critical anomaly detection, report delivery confirmation, or data connector failures.
 
 ## **Domain Overview**
 
@@ -87,10 +110,11 @@ Data Integration, KPI & Analytics, and Reporting & Delivery could all exist in a
 
 ## **Operational Intelligence**
 
-**Operational Intelligence**\
 The Operational Intelligence domain is the core differentiating capability of Pulse. It owns the full agentic reasoning pipeline: retrieving pre-computed KPI metrics and historical trend data from the KPI & Analytics data product's analytical store as a downstream consumer, coordinating a set of specialised reasoning agents, and producing structured insight payloads containing anomaly detections, trend analyses, and actionable recommendations. The domain is triggered on a configured schedule, ensuring autonomous and predictable operation aligned with the platform's weekly reporting cadence. It explicitly does not compute KPIs, ingest or transform data, or compose and deliver reports, those responsibilities belong to the KPI & Analytics, Data Integration, and Reporting & Delivery domains respectively. By consuming only clean, pre-computed KPI summaries and trend data as input, the domain can focus entirely on reasoning logic without any data preparation concerns.
 
-**Features**
+![Operational Intelligence Domain](images/Operational%20Intelligence%20Domain.png){#operational-intelligence-domain width="462"}
+
+### **Features**
 
 -   Retrieve the latest KPI metrics and historical trend data from the KPI & Analytics data product on a scheduled basis and initiate the agent reasoning workflow
 
@@ -102,13 +126,15 @@ The Operational Intelligence domain is the core differentiating capability of Pu
 
 -   Generate natural language insights with prioritised, actionable recommendations for each detected signal
 
+\newpage
+
 -   Produce a structured insight payload (tagged with domain, severity, narrative, and recommendations) for handoff to the Reporting & Delivery domain
 
-**Agents**
+### **Agents**
 
 **Orchestrator Agent** 
 
-The Orchestrator Agent manages the full reasoning workflow. It is triggered on a configured schedule, queries the KPI & Analytics data product's analytical store to retrieve the latest KPI metrics and trend data, and dispatches the Financial Intelligence Agent and the Sales & CRM Intelligence Agent in parallel via the A2A protocol. Once their outputs are available, it sequences the Cross-Domain Reasoning Agent and finally the Insight Synthesis Agent. Design principles: 
+The Orchestrator Agent manages the full reasoning workflow. It is triggered on a configured schedule, queries the KPI & Analytics data product's analytical store to retrieve the latest KPI metrics and trend data, and dispatches the Financial Intelligence Agent and the Sales & CRM Intelligence Agent in parallel via the A2A protocol. Once their outputs are available, it sequences the Cross-Domain Reasoning Agent and finally the Insight Synthesis Agent. **Design principles:** 
 
 -   coarse granularity, as it governs the complete workflow lifecycle; 
 
@@ -118,7 +144,7 @@ The Orchestrator Agent manages the full reasoning workflow. It is triggered on a
 
 **Financial Intelligence Agent** 
 
-The Financial Intelligence Agent receives financial KPI metrics and historical trend data and applies LLM-driven reasoning to detect anomalies, evaluate trends, and generate financial-domain insights with accompanying recommendations. Design principles: 
+The Financial Intelligence Agent receives financial KPI metrics and historical trend data and applies LLM-driven reasoning to detect anomalies, evaluate trends, and generate financial-domain insights with accompanying recommendations. **Design principles:** 
 
 -   high cohesion, as it is scoped exclusively to financial signal analysis; 
 
@@ -126,7 +152,7 @@ The Financial Intelligence Agent receives financial KPI metrics and historical t
 
 **Sales & CRM Intelligence Agent** 
 
-The Sales & CRM Intelligence Agent receives sales and CRM KPI metrics and reasons over pipeline health, conversion trends, deal velocity, and churn indicators to produce sales-domain insights. Design principles: 
+The Sales & CRM Intelligence Agent receives sales and CRM KPI metrics and reasons over pipeline health, conversion trends, deal velocity, and churn indicators to produce sales-domain insights. **Design principles:** 
 
 -   high cohesion, scoped exclusively to sales and CRM signal analysis; 
 
@@ -134,7 +160,7 @@ The Sales & CRM Intelligence Agent receives sales and CRM KPI metrics and reason
 
 **Cross-Domain Reasoning Agent** 
 
-The Cross-Domain Reasoning Agent receives the structured outputs of the Financial and Sales & CRM agents and reasons across them to identify compound operational risks, patterns that emerge only when signals from both domains are considered together, such as simultaneous revenue decline and accelerating churn pointing to a systemic business threat. Design principles: 
+The Cross-Domain Reasoning Agent receives the structured outputs of the Financial and Sales & CRM agents and reasons across them to identify compound operational risks, patterns that emerge only when signals from both domains are considered together, such as simultaneous revenue decline and accelerating churn pointing to a systemic business threat. **Design principles:** 
 
 -   loose coupling, as it depends only on the structured output messages of the preceding agents and not on raw data or domain internals; 
 
@@ -142,17 +168,15 @@ The Cross-Domain Reasoning Agent receives the structured outputs of the Financia
 
 **Insight Synthesis Agent** 
 
-The Insight Synthesis Agent collects all agent outputs and assembles them into a single normalised insight payload, where each insight is structured with a domain tag, severity level, natural language narrative, and prioritised recommendations. This payload is the domain's output contract with the Reporting & Delivery domain. Design principles: 
+The Insight Synthesis Agent collects all agent outputs and assembles them into a single normalised insight payload, where each insight is structured with a domain tag, severity level, natural language narrative, and prioritised recommendations. This payload is the domain's output contract with the Reporting & Delivery domain. **Design principles:** 
 
 -   statelessness, as each synthesis run is fully self-contained and produces a reproducible output regardless of prior runs; 
 
 -   high cohesion, focused solely on structuring and packaging the reasoning outputs.
 
-**Design principles summary**
+### **Design principles summary**
 
 The Operational Intelligence domain is designed as a multi-agent system where each agent encapsulates a single, well-defined reasoning responsibility, resulting in high cohesion within agents and loose coupling between them. Agent-to-agent communication via the A2A protocol ensures that agents remain interoperable and independently evolvable without direct dependencies on each other's internals. The Orchestrator Agent applies the coarse granularity principle to govern the full workflow, while domain-specific and cross-domain agents apply fine granularity to keep reasoning concerns clearly separated. Statelessness in the Insight Synthesis Agent guarantees that downstream domains receive consistent and reproducible outputs. Taken together, these principles make the reasoning pipeline modular, observable, and resilient to changes in individual agent logic or LLM behaviour.
-
-![Operational Intelligence Domain](images/Operational%20Intelligence%20Domain.png){#operational-intelligence-domain}
 
 ## **Data Integration**
 
@@ -160,7 +184,7 @@ The data integration domain is classified as a supporting domain because it enab
 
 The data integration domain does not compute business metrics, detect patterns or anomalies, or generate insights. It also does not perform domain-level business logic or analytical reasoning. Its responsibility is limited to syntactic transformation and reliable data provisioning, acting as a data plumbing layer between external systems and internal analytical components.
 
-**Features:**
+### **Features:**
 
 -   Fetch financial transaction data from external financial systems APIs (e.g., Exact Online, AFAS)
 
@@ -176,41 +200,37 @@ The data integration domain does not compute business metrics, detect patterns o
 
 -   Execute scheduled batch ingestion and transformation pipelines (e.g., weekly updates)
 
-**Services / Agents / Data Products**
+### **Services / Data Products**
 
--   **Connector Service:** The Connector Service is a microservice responsible for retrieving data from external systems via APIs on a scheduled or triggered basis. It is classified as a microservice because it encapsulates a single integration capability and operates independently per source system.
+**Connector Service:** The Connector Service is a microservice responsible for retrieving data from external systems via APIs on a scheduled or triggered basis. It is classified as a microservice because it encapsulates a single integration capability and operates independently per source system. An alternative would have been to implement a single unified ingestion service for all external sources, but this was rejected because it would reduce modularity, increase coupling between integrations, and make it harder to extend or maintain individual connectors.
 
-    -   **Design principles**: Loose coupling and reusability, as connectors are isolated per source system and can be extended independently without affecting other parts of the ingestion pipeline.
+-   **Design principles:** Loose coupling and reusability, as connectors are isolated per source system and can be extended independently without affecting other parts of the ingestion pipeline.
 
-    -   **An alternative:** would have been to implement a single unified ingestion service for all external sources, but this was rejected because it would reduce modularity, increase coupling between integrations, and make it harder to extend or maintain individual connectors.
+**Schema Mapping Service:** The Schema Mapping Service is a data transformation service that maps source-specific data structures, such as financial records and CRM fields, into a unified internal schema. It is classified as a transformation service because it performs a dedicated and deterministic schema-conversion step within the ingestion pipeline. An alternative would have been to embed schema mapping logic directly inside each connector, but this was rejected because it would duplicate transformation logic across integrations and reduce maintainability.
 
--   **Schema Mapping Service:** The Schema Mapping Service is a data transformation service that maps source-specific data structures, such as financial records and CRM fields, into a unified internal schema. It is classified as a transformation service because it performs a dedicated and deterministic schema-conversion step within the ingestion pipeline.
+-   **Design principles:** High cohesion and abstraction, as it encapsulates all schema transformation logic in one place.
 
-    -   **Design principles:** High cohesion and abstraction, as it encapsulates all schema transformation logic in one place.
+**Data Validation Service:** The Data Validation Service is a validation component that checks incoming data against schema definitions and quality constraints before further processing. It is classified as a validation service because its sole responsibility is to ensure data correctness at the ingestion stage.
 
-    -   **Alternative**: An alternative would have been to embed schema mapping logic directly inside each connector, but this was rejected because it would duplicate transformation logic across integrations and reduce maintainability. 
+-   **Design principles:** Autonomy and reliability, ensuring data correctness without relying on downstream domains.
 
--   **Data Validation Service:** The Data Validation Service is a validation component that checks incoming data against schema definitions and quality constraints before further processing. It is classified as a validation service because its sole responsibility is to ensure data correctness at the ingestion stage.
+**Normalization Service:** The Normalization Service is a transformation component that converts validated data into a standardized internal format, resolving inconsistencies in structure, naming, and representation. It is classified as a transformation service because it performs deterministic normalization of source data for downstream use**.**
 
-    -   **Design principles:** Autonomy and reliability, ensuring data correctness without relying on downstream domains.
+-   **Design principles:** High cohesion and consistency, as all transformation logic is centralized and deterministic.
 
--   **Normalization Service:** The Normalization Service is a transformation component that converts validated data into a standardized internal format, resolving inconsistencies in structure, naming, and representation. It is classified as a transformation service because it performs deterministic normalization of source data for downstream use**.**
+**Data Storage Service:** The Data Storage Service is a storage component responsible for persisting both raw and normalized datasets for traceability and downstream access. It is classified as a storage service because it owns the persistence layer of the Data Integration domain. An alternative would have been to store only normalized data and discard raw ingested data, but this was rejected because retaining raw data improves traceability, debugging, and reprocessing capabilities.
 
-    -   **Design principles:** High cohesion and consistency, as all transformation logic is centralized and deterministic.
+-   **Design principles:** Separation of concerns and scalability, allowing storage mechanisms to evolve independently**.**
 
--   **Data Storage Service:** The Data Storage Service is a storage component responsible for persisting both raw and normalized datasets for traceability and downstream access. It is classified as a storage service because it owns the persistence layer of the Data Integration domain.
+### **Design principles summary**
 
-    -   **Design principles:** Separation of concerns and scalability, allowing storage mechanisms to evolve independently**.**
-
-    -   **Alternative:** An alternative would have been to store only normalized data and discard raw ingested data, but this was rejected because retaining raw data improves traceability, debugging, and reprocessing capabilities. 
-
-**Design principles summary:**The Data Integration domain is designed around strong separation of concerns and high cohesion, where each service performs a clearly defined step in the ingestion pipeline. Loose coupling between services enables independent evolution of connectors, transformation logic, and storage mechanisms, which is essential when integrating multiple heterogeneous external systems.The processing steps within the domain are intentionally stateless, allowing scalable and repeatable batch execution, while state persistence is explicitly handled by the Data Storage Service. By strictly avoiding business logic and analytical reasoning, the domain maintains a clear boundary with downstream domains such as KPI & Analytics and Operational Intelligence.This design ensures that the domain remains modular, maintainable, and easily extensible when new data sources or schema variations are introduced, without impacting downstream analytical components. The visualization of this domain you can see here: @fig-data-integration
+The Data Integration domain is designed around strong separation of concerns and high cohesion, where each service performs a clearly defined step in the ingestion pipeline. Loose coupling between services enables independent evolution of connectors, transformation logic, and storage mechanisms, which is essential when integrating multiple heterogeneous external systems.The processing steps within the domain are intentionally stateless, allowing scalable and repeatable batch execution, while state persistence is explicitly handled by the Data Storage Service. By strictly avoiding business logic and analytical reasoning, the domain maintains a clear boundary with downstream domains such as KPI & Analytics and Operational Intelligence.This design ensures that the domain remains modular, maintainable, and easily extensible when new data sources or schema variations are introduced, without impacting downstream analytical components. The visualization of this domain you can see here: @fig-data-integration
 
 ## **KPI & Analytics**
 
 The KPI & Analytics domain is designed as a data product that serves as the analytical engine of the platform. It is responsible for transforming normalized operational data into business metrics and maintaining the historical state for trend analysis. The domain owns its internal storage, computation logic, and its output interfaces. The domain responsibility is merely focused on the computation and storage of metrics. It does not interpret data, detect anomalies, or generate natural language insights; those responsibilities are done by the Operational Intelligence domain.
 
-**Features**
+### **Features**
 
 -   Compute financial metrics, e.g., monthly burn rate, revenue growth, cash flow from normalized expense and income data.
 
@@ -222,21 +242,21 @@ The KPI & Analytics domain is designed as a data product that serves as the anal
 
 -   Expose data serving interface for downstream consumers, specifically the Operational Intelligence Orchestrator Agent.
 
-**Services / Data Products**
+### **Services / Data Products**
 
-**KPI Computation Service:** Calculates the business metrics from normalized data inputs.
+**KPI Computation Service:** is a batch transformation service responsible for calculating business metrics from normalized data inputs delivered by the Data Integration domain. It is classified as a batch transformation service because it performs a scheduled, deterministic computation step, consuming normalized records as input and producing versioned metric outputs, without owning any persistent state itself.
 
--   Design Principles: High cohesion and statelessness, the service is focused solely on the metric calculation, and each run is deterministic, relying only on the input data for that period.
+-   **Design principles:** High cohesion and statelessness, the service is focused solely on the metric calculation, and each run is deterministic, relying only on the input data for that period.
 
-**Historical Storage Service:** Manages the persistence and versioning of metrics to ensure a reliable data source for historical trends.
+**Historical Storage Service:** is a storage service responsible for persisting and versioning computed metrics over time, forming the domain's private analytical store, the Gold Layer. It is classified as a storage service because it owns the domain's entire data state, acting as the persistence boundary that qualifies the domain as a self-contained data product. No other domain accesses this store directly.
 
--   Design Principles: Autonomy and observability, the service owns its own database, preventing other domains from accessing it. Additionally, it implements observability by tracking data lineage to ensure traceable metrics.
+-   **Design principles:** Autonomy and observability, the service owns its own database, preventing other domains from accessing it. Additionally, it implements observability by tracking data lineage to ensure traceable metrics.
 
-**Data Serving Layer:** Exposes the pre-computed tables to downstream domains through a standardized interface.
+**Data Serving Layer:** is a query API service that exposes pre-computed metrics from the Gold Layer to downstream consumers through a versioned, standardized interface. It is classified as a query API service because it provides a stable, explicitly defined read contract for external consumers, specifically the Operational Intelligence Orchestrator Agent, without exposing the underlying storage schema.
 
--   Design Principles: Discoverability and loose coupling, the interface is clearly defined so that the Operational Intelligence Orchestrator can query relevant metrics. This also allows the internal storage schema to be changed without breaking downstream agents.
+-   **Design principles:** Discoverability and loose coupling, the interface is clearly defined so that the Operational Intelligence Orchestrator can query relevant metrics. This also allows the internal storage schema to be changed without breaking downstream agents.
 
-**Design Principles Summary**
+### **Design Principles Summary**
 
 The KPI & Analytics domain functions as a data product by owning the lifecycle of a business metric from calculation to storage and serving. High cohesion is maintained by separating calculation from storage management, and autonomy is ensured through the domain’s ownership of its data state. By exposing a clearly defined serving interface, the domain maintains loose coupling with the Operational Intelligence layer so that metric calculations and internal data structures can evolve independently. For the architecture design for this domain see @fig-kpi-domain
 
@@ -248,7 +268,7 @@ The Reporting & Delivery domain is responsible for composing, formatting, and di
 
 The Reporting & Delivery domain does not compute KPIs, perform data ingestion or transformation, or reason across signals. It does not generate or interpret business insights, as this is the responsibility of the KPI & Analytics and Operational Intelligence domains. Instead, it focuses solely on presentation, assembly, scheduling, and delivery of already generated insights, maintaining a clear boundary between intelligence generation and information communication.
 
-**Features:**
+### **Features:**
 
 -   Assemble report sections into a tenant-specific report based on predefined templates
 
@@ -262,40 +282,33 @@ The Reporting & Delivery domain does not compute KPIs, perform data ingestion or
 
 -   Manage report distribution settings, including recipients and delivery channels
 
-**Services / Agents / Data Products**
+### **Services / Data Products**
 
--   **Composition Service:** The Composition Service is a microservice responsible for assembling report sections by combining structured insights from the Operational Intelligence domain into a tenant-specific report. It is classified as a microservice because it encapsulates a single business capability and operates independently within the reporting pipeline.
+**Composition Service:** The Composition Service is a microservice responsible for assembling report sections by combining structured insights from the Operational Intelligence domain into a tenant-specific report. It is classified as a microservice because it encapsulates a single business capability and operates independently within the reporting pipeline. An alternative would have been to let the Operational Intelligence domain generate fully composed reports, but this was rejected because it would mix reasoning and presentation concerns, violating separation of concerns.
 
-    -   **Design principles:** High cohesion and separation of concerns, as it focus solely on assembling a report content without handling formatting or delivery
+-   **Design principles:** High cohesion and separation of concerns, as it focus solely on assembling a report content without handling formatting or delivery
 
-    -   **An alternative** would have been to let the Operational Intelligence domain generate fully composed reports, but this was rejected because it would mix reasoning and presentation concerns, violating separation of concerns.
+**Template Service:** The Template Service is a template management component that applies predefined templates to structure insights into consistent layouts and sections for each tenant. It is classified as a template service because it separates presentation structure from report content. An alternative would have been to hardcode report structures within the Composition Service, but this was rejected because it would reduce flexibility and limit reuse across tenants.
 
--   **Template Service:** The Template Service is a template management component that applies predefined templates to structure insights into consistent layouts and sections for each tenant. It is classified as a template service because it separates presentation structure from report content. 
+-   **Design principles:** Abstraction and reusability, as templates standardize report structure across tenants while allowing configuration.
 
-    -   **Design principles:** Abstraction and reusability, as templates standardize report structure across tenants while allowing configuration.
+**Scheduling Service:** The Scheduling Service is a scheduling component responsible for triggering report generation and delivery based on configured intervals. It is classified as a scheduling service because it manages time-based orchestration independently of report generation logic. An alternative would have been to trigger reporting exclusively through upstream events, but this was rejected because reporting requires predictable, time-based delivery independent of pipeline execution timing.
 
-    -   **An alternative** would have been to hardcode report structures within the Composition Service, but this was rejected because it would reduce flexibility and limit reuse across tenants.
+-   **Design principles:** Autonomy and statelessness, enabling independent and repeatable scheduling without dependency on other services
 
--   **Scheduling Service:** The Scheduling Service is a scheduling component responsible for triggering report generation and delivery based on configured intervals. It is classified as a scheduling service because it manages time-based orchestration independently of report generation logic. 
+**Delivery Service:** The Delivery Service is a microservice responsible for distributing generated reports to stakeholders via configured channels such as email and PDF attachments. It is classified as a microservice because it encapsulates delivery logic and can scale independently of report generation. An alternative would have been to embed delivery logic within the Composition Service, but this was rejected because it would tightly couple report generation and distribution, reducing flexibility and scalability.
 
-    -   **Design principles:** Autonomy and statelessness, enabling independent and repeatable scheduling without dependency on other services
+-   **Design principles:** Loose coupling and scalability, as delivery mechanisms are decoupled from report generation and can evolve independently
 
-    -   **An alternative** would have been to trigger reporting exclusively through upstream events, but this was rejected because reporting requires predictable, time-based delivery independent of pipeline execution timing. .
+### **Design principles summary**
 
--   **Delivery Service:** The Delivery Service is a microservice responsible for distributing generated reports to stakeholders via configured channels such as email and PDF attachments. It is classified as a microservice because it encapsulates delivery logic and can scale independently of report generation. 
-
-    -   **Design principles:** Loose coupling and scalability, as delivery mechanisms are decoupled from report generation and can evolve independently
-
-    -   **An alternative** would have been to embed delivery logic within the Composition Service, but this was rejected because it would tightly couple report generation and distribution, reducing flexibility and scalability. 
-
-**Design principles summary\
-**The Reporting & Delivery domain is designed with strong separation of concerns, where composition, templating, scheduling, and delivery are handled by distinct services. High cohesion ensures that each service focuses on a single responsibility, while loose coupling allows independent evolution of report generation and delivery mechanisms.The domain operates in a stateless and configurable manner at the service level, supporting scalable and repeatable report generation, while configuration and delivery state are managed explicitly where required. By avoiding analytical logic and relying on upstream domains for insights, it maintains a clear boundary between intelligence generation and information presentation.This design ensures that reporting functionality remains modular, flexible, and easily extensible, allowing new report formats, templates, and delivery channels to be introduced without impacting upstream domains. And i refer to the diagram which has been made for this domain @fig-diagram-report
+The Reporting & Delivery domain is designed with strong separation of concerns, where composition, templating, scheduling, and delivery are handled by distinct services. High cohesion ensures that each service focuses on a single responsibility, while loose coupling allows independent evolution of report generation and delivery mechanisms.The domain operates in a stateless and configurable manner at the service level, supporting scalable and repeatable report generation, while configuration and delivery state are managed explicitly where required. By avoiding analytical logic and relying on upstream domains for insights, it maintains a clear boundary between intelligence generation and information presentation.This design ensures that reporting functionality remains modular, flexible, and easily extensible, allowing new report formats, templates, and delivery channels to be introduced without impacting upstream domains. And i refer to the diagram which has been made for this domain @fig-diagram-report
 
 ## **Tenant Management**
 
-Bounded context description: The Tenant Management domain is responsible for onboarding SME clients, managing tenant-specific configuration, and controlling user access within the Pulse platform. It owns tenant registration, user accounts, role assignments, connector configuration metadata, and the isolation of tenant-level settings required by other domains. This domain ensures that each SME operates within its own bounded operational space, with the correct users, permissions, and data source configuration in place before any ingestion, analytics, or reporting can occur. The domain does not ingest external business data, compute KPIs, generate operational insights, or deliver reports. Its responsibility is purely administrative and configurational, which makes its boundary clear and defensible within the overall architecture.
+The Tenant Management domain is a generic domain responsible for onboarding SME clients, managing tenant-specific configuration, and controlling user access within the Pulse platform. It owns tenant registration, user accounts, role assignments, and connector configuration metadata. It does not ingest business data, compute KPIs, generate insights, or deliver reports. Its responsibility is purely administrative and configurational.
 
-**Features:**
+### **Features:**
 
 -   Register a new SME tenant and initialize its platform workspace
 
@@ -307,37 +320,33 @@ Bounded context description: The Tenant Management domain is responsible for onb
 
 -   Enforce tenant isolation for users, settings, and downstream service access
 
--   Maintain tenant lifecycle state, for example active, suspended, or offboarded
+### **Services**
 
-**Services / Data Products**
+**Tenant Onboarding Service**: is a microservice that creates new tenants and initializes their baseline workspace configuration.
 
-**Tenant Onboarding Service**: Creates a new tenant, initializes the tenant workspace, and registers the baseline configuration required for platform usage.
+-   **Design principles:** high cohesion, because it focuses solely on tenant creation and initialization; separation of concerns, because onboarding logic is isolated from authentication, analytics, and connector execution.
 
--   Design principles: high cohesion, because it focuses solely on tenant creation and initialization; separation of concerns, because onboarding logic is isolated from authentication, analytics, and connector execution.
+**User and Role Management Service**: is a microservice that manages user accounts and role assignments within each tenant.
 
-**User and Role Management Service**: Manages user accounts within each tenant and assigns the correct access roles based on stakeholder responsibilities.
+-   **Design principles:** high cohesion, because all identity and authorization administration is centralized here; loose coupling, because downstream domains only consume role and tenant context rather than implementing their own user logic.
 
--   Design principles: high cohesion, because all identity and authorization administration is centralized here; loose coupling, because downstream domains only consume role and tenant context rather than implementing their own user logic.
+**Tenant Configuration Service**: is a configuration service that stores and exposes tenant-level settings such as connector metadata and report preferences.
 
-**Tenant Configuration Service**: Stores and manages tenant-level settings such as connector metadata, report preferences, and domain-specific configuration references.
+-   **Design principles:** abstraction, because configuration is exposed through a clean internal interface rather than embedded across domains; reusability, because all other domains can rely on one consistent source of tenant configuration.
 
--   Design principles: abstraction, because configuration is exposed through a clean internal interface rather than embedded across domains; reusability, because all other domains can rely on one consistent source of tenant configuration.
+**Access Control Service**: is a validation service that enforces tenant boundaries and authorizes access to tenant resources.
 
-**Access Control Service**: Enforces tenant boundaries and validates whether a given user or process may access a tenant’s resources or configuration.
+-   **Design principles:** reliability, because correct access enforcement is essential for multi-tenant integrity; statelessness, because authorization checks should be repeatable and independent per request.
 
--   Design principles: reliability, because correct access enforcement is essential for multi-tenant integrity; statelessness, because authorization checks should be repeatable and independent per request.
-
-**Design principles summary**
+### **Design principles summary**
 
 The Tenant Management domain is intentionally designed as a thin generic domain that centralizes administrative responsibilities without absorbing business logic from other domains. High cohesion is achieved by grouping onboarding, user administration, configuration, and access control into clearly scoped services, while loose coupling ensures that downstream domains depend only on tenant context and permissions, not on internal management workflows. By keeping tenant state and configuration explicit, the architecture supports clean multi-tenant isolation and simpler operational governance. This makes the platform easier to scale across multiple SME clients while preserving a clear separation between administration and operational intelligence.
 
 ## **Notification**
 
-**Bounded context description**
+The Notification domain is a generic domain responsible for dispatching event-driven alerts to stakeholders via email, SMS, and Slack. It owns routing logic, per-channel message formatting, and reliable delivery. It is triggered by events from other domains such as report delivery confirmations from Reporting & Delivery and connector failure events from Data Integration. It does not generate insights, compose reports, or determine the business significance of events.
 
-The Notification domain is responsible for dispatching event-driven alerts to stakeholders and platform administrators through email, SMS, and Slack. It owns the routing logic that determines which channel to use for a given event, the formatting of alert messages per channel, and the reliable delivery of those messages. The domain is triggered by events emitted from other domains, primarily report delivery confirmations from Reporting & Delivery and platform-level incidents such as connector failures from Data Integration.It does not generate insights, compose reports, or determine the business significance of events; it formats, routes, and delivers notification requests. Note: full report distribution (e.g., PDF attachments) is owned by the Reporting & Delivery domain. This domain handles lightweight alerting only, such as confirmations, warnings, and failure notices.
-
-**Features**
+### **Features**
 
 -   Receive notification trigger events from upstream domains via an internal event bus
 
@@ -347,29 +356,29 @@ The Notification domain is responsible for dispatching event-driven alerts to st
 
 -   Dispatch notifications through external provider APIs like Slack Webhooks
 
--   Track delivery status and emit confirmation or failure events for observability
+### **Services**
 
-**Services**
+**Notification Router Service** is a microservice that receives incoming events and determines the target channel based on event type and recipient preferences.
 
-**Notification Router Service** Receives incoming notification events and determines the target channel(s) based on event type and recipient preferences.
+-   **Design principles:** loose coupling, as it depends only on a standardised event schema with no direct dependency on emitting domains; high cohesion, as it handles routing logic exclusively.
 
--   Design principles: loose coupling, as it depends only on a standardised event schema with no direct dependency on emitting domains; high cohesion, as it handles routing logic exclusively.
+**Message Formatting Service** is a microservice that transforms notification content into the appropriate channel format.
 
-**Message Formatting Service** Transforms routed notification content into the appropriate channel format, which is short text for SMS, block message for Slack, templated HTML for email alerts.
+-   **Design principles:** reusability, as formatting templates are shared across event types which helps with high cohesion, as all channel-specific formatting is centralised here.
 
--   Design principles: reusability, as formatting templates are shared across event types which helps with high cohesion, as all channel-specific formatting is centralised here.
+**Dispatch Service** is a microservice that sends formatted messages to external providers and records delivery outcomes.
 
-**Dispatch Service** Sends formatted messages to external channel providers and records delivery outcomes.
+-   **Design principles:** autonomy, as it manages its own retry logic independently of upstream services; observability, as it logs delivery status and emits confirmation or failure events for platform monitoring.
 
--   Design principles: autonomy, as it manages its own retry logic independently of upstream services; observability, as it logs delivery status and emits confirmation or failure events for platform monitoring.
-
-**Design principles summary**
+### **Design principles summary**
 
 The Notification domain is kept thin and generic. Loose coupling to upstream domains is achieved through a standardised event schema on the event bus, allowing any domain to trigger notifications without the Notification domain needing knowledge of the emitting context. Routing, formatting, and dispatch are separated into three cohesive services, meaning a new channel can be added by extending only the Formatting and Dispatch services. Statelessness in the router and formatter, combined with autonomous retry handling in the Dispatch Service, keeps the pipeline resilient and independently scalable
 
 # Architectural Design
 
 ## Architectural Overview
+
+![Design-Architecture](images/ADA-Design-Architecture.png){#fig-design-architecture-section3 width="547"}
 
 The Pulse platform is designed as an event-driven, multi-domain architecture in which six bounded contexts operate independently, each owning its own database and communicating through a central event bus. External actors interact with the platform exclusively through an API Gateway, which serves as the single entry point for all inbound requests. No domain exposes itself directly to external traffic, and no domain accesses another domain's database directly.
 
@@ -383,9 +392,7 @@ Tenant Management sits orthogonally to this pipeline. It does not participate in
 
 -   Third, it enables non-blocking execution, allowing the pipeline to progress asynchronously without any domain holding a connection open while waiting for a downstream response.
 
-The alternative of chaining REST calls between domains was rejected precisely because it would have introduced tight temporal coupling, where the failure or slowness of any single domain would propagate upstream and stall the entire pipeline. The Architecture design can be seen here below:
-
-![Design-Architecture](images/ADA-Design-Architecture.png){#fig-design-architecture-section3}
+The alternative of chaining REST calls between domains was rejected precisely because it would have introduced tight temporal coupling, where the failure or slowness of any single domain would propagate upstream and stall the entire pipeline. 
 
 ## Component Descriptions
 
@@ -457,16 +464,16 @@ Overall, the team functioned well, with strong communication, clear task ownersh
 
 # Technology Statement
 
-During the preparation of this work, we used ChatGPT (GPT-4o) & Claude in order to support grammar and clarity checks, brainstorm initial platform concepts, and guide the domain design process through an interactive questioning approach, prompting us to reflect on design decisions and come up with our own ideas and solutions rather than generating content directly. The following parts of the assignment were affected by AI tool usage: Section 1 (brainstorming and grammar review), Section 2 (design guidance and grammar review), Section 3 (grammar review), and Section 4 (grammar review). After using this tool/service, Rick de Rijk, Thom Verzantvoort, Tycho van Rooij, Jelles Duin, and Gilbert Laanen evaluated the validity of the tool's outputs and edited the content as needed. As a consequence, Rick de Rijk, Thom Verzantvoort, Tycho van Rooij, Jelles Duin, and Gilbert Laanen take full responsibility for the content of this work.
+During the preparation of this work, we used Claude (Sonnet 4.6), ChatGPT (GPT-5.3), and Perplexity to support the design process. Claude and ChatGPT were used primarily for brainstorming, design sparring, and interactive guidance, prompting us to reflect on design decisions and develop our own solutions rather than generating content directly, as well as grammar and clarity review. Perplexity was used for research and source discovery. The following parts of the assignment were affected: Section 1 (brainstorming and grammar review), Section 2 (design guidance and grammar review), Section 3 (grammar review). After using these tools, Rick de Rijk, Thom Verzantvoort, Tycho van Rooij, Jelles Duin, and Gilbert Laanen evaluated the validity of all outputs and edited the content as needed. As a consequence, Rick de Rijk, Thom Verzantvoort, Tycho van Rooij, Jelles Duin, and Gilbert Laanen take full responsibility for the content of this work.
 
-# References
+\newpage
 
 # Appendix
 
 ![Domain Diagram](images/domain-diargam.png){#fig-domain-diagram}
 
-![Data Integration Domain](images/Context%20Diagram%20Data%20integration%20service.png){#fig-data-integration}
+![Data Integration Domain](images/Context%20Diagram%20Data%20integration%20service.png){#fig-data-integration width="446"}
 
-![KPI-Domain](images/KPI-Domain-design.png){#fig-kpi-domain}
+![KPI & Analysis Domain](images/KPI-Domain-design.png){#fig-kpi-domain}
 
-![Domain-Report-Diagram](images/Domain-Report.png){#fig-diagram-report}
+![Reporting & Delivery Domain](images/Domain-Report.png){#fig-diagram-report}
