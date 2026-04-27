@@ -21,6 +21,7 @@ lof: false
 number-sections: true
 bibliography: references.bib
 ---
+
 ```{=latex}
 \begin{titlepage}
   \centering
@@ -41,7 +42,9 @@ bibliography: references.bib
   \end{flushright}
 \end{titlepage}
 ```
+
 \newpage
+
 ```{=latex}
 \tableofcontents
 \listoffigures
@@ -180,9 +183,9 @@ The Operational Intelligence domain is designed as a multi-agent system where ea
 
 ## **Data Integration**
 
-The data integration domain is classified as a supporting domain because it enables downstream analytical and reasoning capabilities by providing clean, standardized data, but does not directly deliver business value to end users.The Data Integration domain is responsible for ingesting, standardizing, and storing operational data from external systems such as financial platforms and CRM tools. It owns the full data ingestion pipeline, including API connectivity, data retrieval, validation, transformation into a unified schema, and persistence of both raw and normalized datasets. The domain ensures that heterogeneous data from multiple sources is made consistent and usable for downstream domains.
+The Data Integration domain is classified as a supporting domain because it enables downstream analytical and reasoning capabilities by providing clean, standardized data, but does not directly deliver business value to end users. The Data Integration domain is responsible for ingesting, standardizing, and storing operational data from external systems such as financial platforms and CRM tools. It owns the full data ingestion pipeline, including API connectivity, data retrieval, validation, transformation into a unified schema, and persistence of both raw and normalized datasets. The domain ensures that heterogeneous data from multiple sources is made consistent and usable for downstream domains.
 
-The data integration domain does not compute business metrics, detect patterns or anomalies, or generate insights. It also does not perform domain-level business logic or analytical reasoning. Its responsibility is limited to syntactic transformation and reliable data provisioning, acting as a data plumbing layer between external systems and internal analytical components.
+The Data Integration domain does not compute business metrics, detect patterns or anomalies, or generate insights. It also does not perform domain-level business logic or analytical reasoning. Its responsibility is limited to syntactic transformation and reliable data provisioning, acting as a data plumbing layer between external systems and internal analytical components.
 
 ### **Features:**
 
@@ -392,7 +395,7 @@ Tenant Management sits orthogonally to this pipeline. It does not participate in
 
 -   Third, it enables non-blocking execution, allowing the pipeline to progress asynchronously without any domain holding a connection open while waiting for a downstream response.
 
-The alternative of chaining REST calls between domains was rejected precisely because it would have introduced tight temporal coupling, where the failure or slowness of any single domain would propagate upstream and stall the entire pipeline. 
+The alternative of chaining REST calls between domains was rejected precisely because it would have introduced tight temporal coupling, where the failure or slowness of any single domain would propagate upstream and stall the entire pipeline.
 
 ## Component Descriptions
 
